@@ -4,6 +4,6 @@
 2. The version of Python used is 3.6.6. 
 3. The Results Obtained folder has all the Gaussian Kernel's and the DoG Filter's Values. (Normalised in the first case).
 4. img1.jpg, img2.jpg and img3.jpg are the used datasets. 
-5. The  Kernel Values stored in the above mentioned folder stored in the text file is named according to its standard deviation.
+5. The  Kernel Values stored is named according to its standard deviation.
 
 Email - deepak.narayanan@iitgn.ac.in 
