@@ -1,4 +1,4 @@
-## --------------------- EE 645 3D Computer Vision | S Deepak Narayanan | 16110142 | Assignment 1 -----------------------------
+##  EE 645 3D Computer Vision | S Deepak Narayanan | 16110142 | Assignment 1 
 
 1. Execute the file Assignment1_Question1.py for the first question and Assignment1_Question2.py for the second question. 
 2. The version of Python used is 3.6.6. 
