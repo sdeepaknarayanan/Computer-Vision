@@ -6,13 +6,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 import random as rd
-## Defining the Gaussian Function
+import operator
 
+
+
+## Defining the Gaussian Function
 def gaussian(x,y,sigma):
     return (math.exp(-(x**2 + y**2)/(2*sigma**2)))
 
+
 ## Defining the Convolution Function
 def convolution(image, sigma):
+	## Filter Size is set to 6 times Sigma
+	## Filter Size is odd ..
     temp = 0
     final_image = np.zeros(image.shape)
     if (int(6*sigma)%2)==0:
@@ -27,7 +33,6 @@ def convolution(image, sigma):
             filter_[i][j] = gaussian(i-offset, j-offset, sigma)
     
     ## Normalizing the Filter
-    ## Filter Size is set to 6 times Sigma
     
     sum_filter = 0
     for i in range(filter_size):
@@ -35,6 +40,8 @@ def convolution(image, sigma):
             sum_filter+=filter_[i][j]
     filter_=filter_/(sum_filter)
     temp = 0
+
+    # Convolution begins .... performing it here
     img = np.zeros(shap)
     for i in range(offset,shap[0]-offset):
         for j in range(offset, shap[1]-offset):
@@ -47,6 +54,8 @@ def convolution(image, sigma):
             final_image[i1-offset][i2-offset] = temp
             temp = 0 
     return final_image
+
+
 
 ## Defining the Function for Finding Out Keypoints
 def keypoint(image_1, image_2, image_3):
@@ -68,6 +77,8 @@ def keypoint(image_1, image_2, image_3):
                 keypt.append([i,j])
     return keypt
 
+
+
 ## Keypoint Detection for the topmost and the bottommost layers 
 ## Even though detected, it is not used in the final descriptor part
 def keypoint_top_bottom(image_1, image_2):
@@ -75,7 +86,7 @@ def keypoint_top_bottom(image_1, image_2):
     keypt = []
     for i in range(1, temp[0]-1):
         for j in range(1, temp[1]-1):
-        	# Comparison with 26 other neighbors
+        	# Comparison with 17 other neighbors
             min1=min(image_2[i,j],image_2[i-1,j-1], image_2[i-1,j], image_2[i-1,j+1], image_2[i,j-1], image_2[i,j+1],image_2[i+1,j-1],image_2[i+1,j],image_2[i+1][j+1])
             max1=max(image_2[i,j],image_2[i-1,j-1], image_2[i-1,j], image_2[i-1,j+1], image_2[i,j-1], image_2[i,j+1],image_2[i+1,j-1],image_2[i+1,j],image_2[i+1][j+1])
             min2=min(image_1[i-1,j-1], image_1[i-1,j], image_1[i-1,j+1], image_1[i,j-1], image_1[i,j+1],image_1[i+1,j-1],image_1[i+1,j],image_1[i+1][j+1])
@@ -86,6 +97,8 @@ def keypoint_top_bottom(image_1, image_2):
                 keypt.append([i,j])
     return keypt
 
+
+
 ## Defining the Function for the computation of the Difference of the Gaussians - Input is already two Gaussian Convolved Images
 def diff_of_gauss(image1, image2):
     image3 = np.zeros((image1.shape[0],image1.shape[1]))
@@ -94,10 +107,9 @@ def diff_of_gauss(image1, image2):
             image3[i,j] = image1[i,j]-image2[i,j]
     return image3
 
-## Orientation Assignment for a Keypoint
 
+## Orientation Assignment for a Keypoint
 ## This returns a bucket that has Keypoint and the Correspoing buckets that we build
-## We need to show the orientation - Done Later
 def orientation_assignment(octave_number, image_number):
     hist = {}
     image = image_generated[octave_number-1][image_number-1]
@@ -113,6 +125,8 @@ def orientation_assignment(octave_number, image_number):
     y__ = image.shape[1]
     angle = {}
     magnitude = {}
+    # Magnitude of orientations are stored in magnitude
+    # Angles of the oreintations are stored in angle
     for i in range(len(kplist[index1][index2])):
         x,y = kplist[index1][index2][i][0],kplist[index1][index2][i][1]
         if x+8<=x__ and y+8<=y__ and x-8>=0 and y-8>=0: ## Ensuring that corner keypoints are eliminated - We wont have a 16x16 neighborhood for them
@@ -169,12 +183,13 @@ def orientation_assignment(octave_number, image_number):
                 max_list[i].append([j,hist[i][j]])
     return max_list
 
+
 ## Final SIFT Descriptor without Normalizing
 ## This returns Lists of Lists that is eventually dealt with later
 def sift_descriptor(image, orientation):
     
     ## Computing the orientations --- 
-    
+    ## Here the variable i contained the Key Point Information
     total_bin = {}
     hist = {}
     for i in orientation:
@@ -235,6 +250,7 @@ def sift_descriptor(image, orientation):
                 magnitude[(x,y)]*=gauss_8[x-i[0]+8][y+8-i[1]]
         ## Initializing the 128 long vector in terms of 16 elements of a list, with each containing 8 elements
         bins = [[[] for ___ in range(8)] for __ in range(16)]
+
         ## The below functions map our 16x16 neighborhood ( 256) pixels under consideration. 
         try:
             for i3 in range(-8,-4,1):
@@ -311,13 +327,39 @@ def sift_descriptor(image, orientation):
                     bins[15][temp].append(magnitude[(i[0]+i3,i[1]+j)])  
         except:
             continue
+        ##All the 16 bins are getting appended to total bin
+        ##They are getting appended according to the keypoints
         total_bin[(i[0],i[1])] = bins
         del angle 
         del magnitude
     return total_bin
+
+# No inbuilt function used - Definition of the Eucledian or the L2 Norm
+def l2norm(x,y):
+	val = 0.0
+	for i in range(len(x)):
+		val+=(x[i]-y[i])**2 
+	val=val**0.5
+	return val
+
+## Here is the Declaration of the function for computing the minimum distance between sift descriptors and for Keypoint Matching
+def keypointmatch(siftd1,siftd2):
+	error = {}
+	for i in siftd1:
+		for j in siftd2:
+			vector1 = siftd1[i]
+			vector2 = siftd2[j]
+			error[(i,j)] = l2norm(vector1,vector2)
+	sorted_x = sorted(error.items(), key=operator.itemgetter(1))
+	arr = {}
+	for elem in range(20):
+		arr[sorted_x[elem][0]] = sorted_x[elem][1]
+	return arr
+
  #----------------------------------------------------------------------------This is the code part of the program where all the initialization occurs -----------------------------------------------------------            
 ## Initial Declaration of all the Sigma's
 ## I have taken 4 octaves, each with 5 different sigmas
+
 sigma = 1/(2**0.5)
 k = 2**0.5
 octave1 = []
@@ -351,7 +393,8 @@ image_1 = cv.cvtColor(image_1,cv.COLOR_BGR2GRAY)
 image_1 = convolution(image_1, 0.5)
 print(' The initial image has been convolved with a Gaussian of Sigma 0.5 .... ')
 print(' Now the Gaussian Blurred Images are being obtained ....')
-##  Image is initally convolved so that we reduce the noise
+##  Image is initally convolved to do smoothing.....
+
 
 ## Images are Generated - The Gaussian Scale Space Images - They are generated here
 image_generated = []
@@ -361,14 +404,17 @@ for i in range(1,5):
         img_ = convolution(image_1, j)
         image_generated[i-1].append(img_)
     image_1 = cv.resize(image_1,None, fx = 0.5, fy =  0.5, interpolation = cv.INTER_CUBIC)
-print(' The Convolution with Gaussians at different scales is over .... Now displaying all the images... In increasing order of sigma used for convolution')
+print(' The Convolution with Gaussians at different scales is over ....')
 for i in range(len(image_generated)):
 	for j in range(len(image_generated[0])):
 		plt.imshow(image_generated[i][j],cmap = 'gray')
 		plt.title(' This Image is in Octave'+ str(i+1) )
-		#plt.show()
+		tmp = image_generated[i][j].astype(np.uint8)
+		plt.savefig('Results/Gaussian/I1/Image1_Guassian_Octave'+str(i+1)+'_imno'+str(j+1)+'.jpg')
+		cv.imwrite('CV/Gaussian/I1/Image1_Guassian_Octave'+str(i+1)+'_imno'+str(j+1)+'.jpg',tmp)
+		plt.close()
 ## Generating all the Difference of Gaussian Images heree
-print(' Now the DoG Images are being calculated. They are displayed below')
+print(' Now the DoG Images are being calculated.')
 image_generated_dog = []
 for i in range(len(image_generated)):
     image_generated_dog.append([])
@@ -378,12 +424,16 @@ for i in range(len(image_generated)):
             image_generated_dog[i].append(temp)
         except:
             continue
+
 for i in range(len(image_generated)):
 	for j in range(len(image_generated_dog[0])):
 		plt.imshow(image_generated_dog[i][j],cmap = 'gray')
 		plt.title(' This Image is a result of DoG in Octave '+ str(i+1) )
-		#plt.show()
-print(' The DoG Images have been displayed')
+		tmp = image_generated_dog[i][j].astype(np.uint8)
+		plt.savefig('Results/DoG/I1/Image1_DoG_Octave'+str(i+1)+'_imno'+str(j+1)+'.jpg')
+		cv.imwrite('CV/DoG/I1/Image1_DoG_Octave'+str(i+1)+'_imno'+str(j+1)+'.jpg',tmp)
+		plt.close()
+print(' The DoG Images have been saved')
 print(' Now we are detecting Keypoints')
 
 ## Initialisation of the Key Point List
@@ -404,8 +454,46 @@ for i in range(len(image_generated_dog)):
 for i in range(len(image_generated_dog)):
     kplist[i].append(keypoint_top_bottom(image_generated_dog[i][2],image_generated_dog[i][3]))
 
-print(' Key Points detected... After Orientation Assignment, they will be displayed')
-print(' The orientation are being assigned here....')
+
+image_1 = cv.imread('img1.jpg')
+image_1 = cv.resize(image_1,None, fx = 0.05, fy =  0.05, interpolation = cv.INTER_CUBIC)
+image_1 = cv.cvtColor(image_1,cv.COLOR_BGR2GRAY)
+print(' Key Points detected... they are saved..... Note that Red is for first octave, blue for second, cyan for third and yellow for fourth in the image saved..')
+
+for i in range(len(kplist)):
+	for j in range(len(kplist[0])):
+		if j!=0 and j!=3:
+			if i==0:
+				#plt.figure(figsize = (12,12))
+				plt.imshow(image_generated[i][j],cmap = 'gray')
+				for k in range(len(kplist[i][j])):
+					plt.scatter(kplist[i][j][k][1],kplist[i][j][k][0],color='r')
+					plt.savefig('Results/Keypoints/I1/'+' Octave '+ str(i+1) +'Image'+str(j+1)+'.jpg')
+				plt.close()
+			if i==1:
+				#plt.figure(figsize = (12,12))
+				plt.imshow(image_generated[i][j],cmap = 'gray')
+				for k in range(len(kplist[i][j])):
+					plt.scatter(kplist[i][j][k][1]*2,kplist[i][j][k][0]*2,color='r')
+					plt.savefig('Results/Keypoints/I1/'+' Octave '+ str(i+1) +'Image'+str(j+1)+'.jpg')
+				plt.close()
+			if i==2:
+				#plt.figure(figsize = (12,12))
+				plt.imshow(image_generated[i][j],cmap = 'gray')
+				for k in range(len(kplist[i][j])):
+					plt.scatter(kplist[i][j][k][1]*4,kplist[i][j][k][0]*4,color='r')
+					plt.savefig('Results/Keypoints/I1/'+' Octave '+ str(i+1) +'Image'+str(j+1)+'.jpg')
+				plt.close()
+			if i==3:
+				#plt.figure(figsize = (12,12))
+				plt.imshow(image_generated[i][j],cmap = 'gray')
+				for k in range(len(kplist[i][j])):
+					plt.scatter(kplist[i][j][k][1]*8,kplist[i][j][k][0]*8,color='r')
+					plt.savefig('Results/Keypoints/I1/'+' Octave '+ str(i+1) +'Image'+str(j+1)+'.jpg')
+				plt.close()
+print('Key Points have been saved')
+print(' The orientations are being assigned now....')
+
 
 ## Assigning the Orientation to all the images
 ## This is done in the Gaussian Scale Space. 
@@ -413,6 +501,8 @@ orientation_final = {}
 for i in range(1,len(image_generated_dog)+1):
     for j in range(1,len(image_generated_dog[0])+1):
         orientation_final[(i,j)] = orientation_assignment(i,j)
+
+
 ## For every image, I am taking the DoG from which subtraction happens here
 #---------------------------------------------------------------------------- This part of the code outputs the Oriented Vectors on our Image -----------------------------------------------------------
 image_1 = cv.imread('img1.jpg')
@@ -421,7 +511,7 @@ image_1 = cv.cvtColor(image_1,cv.COLOR_BGR2GRAY)
 image_1 = convolution(image_1, 0.5)
 plt.figure(figsize=(12,12))
 plt.imshow(image_1,cmap='gray')
-plt.title(' The Key point orientations after assigning to the original image')
+plt.title(' The Key point orientations after assigning to the original image are now being computed and will be saved...')
 for elem in orientation_final:
     if elem[1]!=1 and elem[1]!=4:
         if elem[0]==1:
@@ -430,21 +520,21 @@ for elem in orientation_final:
                 for j in range(len(image[i])):
                     angle = rd.uniform(image[i][j][0]*10,(image[i][j][0]+1)*10)
                     arrow1 = plt.arrow(x=i[1],y=i[0],dx = 4*math.cos(angle*math.pi/180),dy = 4*math.sin(angle*math.pi/180),head_width = 2,color ='b',label = 'Octave 1')
-                    #plt.legend([arrow1,],['Octave 1'])
+                    
         if elem[0]==2:
             image = orientation_final[elem]
             for i in image:
                 for j in range(len(image[i])):
                     angle = rd.uniform(image[i][j][0]*10,(image[i][j][0]+1)*10)
                     arrow2 = plt.arrow(x=2*i[1],y=2*i[0],dx = 4*math.cos(angle*math.pi/180),dy = 4*math.sin(angle*math.pi/180),head_width=2,color='r',label = 'Octave 2')
-                    #plt.legend([arrow2,],['Octave 2'])
+                   
         if elem[0]==3:
             image = orientation_final[elem]
             for i in image:
                 for j in range(len(image[i])):
                     angle = rd.uniform(image[i][j][0]*10,(image[i][j][0]+1)*10)
                     arrow3 = plt.arrow(x=4*i[1],y=4*i[0],dx = 4*math.cos(angle*math.pi/180),dy = 4*math.sin(angle*math.pi/180),head_width=2,color = 'c',label = 'Octave 3')
-                    #plt.legend([arrow3,],['Octave 3'])
+                    
         if elem[0]==4:
             image = orientation_final[elem]
             for i in image:
@@ -452,8 +542,10 @@ for elem in orientation_final:
                     angle = rd.uniform(image[i][j][0]*10,(image[i][j][0]+1)*10)
                     arrow4 = plt.arrow(x=8*i[1],y=8*i[0],dx = 4*math.cos(angle*math.pi/180),dy = 4*math.sin(angle*math.pi/180),head_width=2,color='y',label = 'Octave 4')
                     plt.legend([arrow1,arrow2,arrow3,arrow4],['Octave 1','Octave 2','Octave 3','Octave 4'])
-#plt.show()
+plt.savefig('Results/Orientation/Orientation_Image_1.jpg')
+plt.close()
 #---------------------------------------------------------------------------- Assignment of Final Descriptor follows below -----------------------------------------------------------
+
 print(' Sift Descriptor under computation here')
 import math
 ## SIFT Descriptor - I am excluding the topmost and bottommost ones
@@ -508,11 +600,18 @@ for i in final_descriptor:
 		sum_+=j
 	final_descriptor[i] = final_descriptor[i]/sum_
 # Now, final descriptor has all the keypoints and the correspoinding 128 Dimensional Vector
+print(' Normalised Sift Descriptor with Max Value set to 0.2 has been computed')
+
+print(' The SIFT Descriptor has been stored at Results/SIFT Descriptor')
+file = open('Results/SIFT Descriptor/128d_sift_img1.txt','w')
+file.write('\t\t\t SIFT Descriptors in each line are a 128D Vector\t\t\t\t\n\n\n')
 for i in final_descriptor:
-	print(final_descriptor[i])
-print(' Normalinsed Sift Descriptor with Max Value set to 0.2 is computed')
-print(' Now, we will try to match two images....')
-# ------------------------------------------------------------------- Matching Images ------------------------------------------------------------- #
+	for j in final_descriptor[i]:
+		file.write(str(j)+'\t')
+	file.write('\n\n')
+file.close()
+# ------------------------------------------------------------------ Matching Images ------------------------------------------------------------- #
+print(' Second Image Computation under progress')
 
 sigma = 1/(2**0.5)
 k = 2**0.5
@@ -557,14 +656,17 @@ for i in range(1,5):
         img_ = convolution(image_1, j)
         image_generated[i-1].append(img_)
     image_1 = cv.resize(image_1,None, fx = 0.5, fy =  0.5, interpolation = cv.INTER_CUBIC)
-print(' The Convolution with Gaussians at different scales is over .... Now displaying all the images... In increasing order of sigma used for convolution')
+print(' The Convolution with Gaussians at different scales is over ....... Images getting saved ....')
 for i in range(len(image_generated)):
 	for j in range(len(image_generated[0])):
 		plt.imshow(image_generated[i][j],cmap = 'gray')
 		plt.title(' This Image is in Octave'+ str(i+1) )
-		#plt.show()
+		tmp = image_generated[i][j].astype(np.uint8)
+		plt.savefig('Results/Gaussian/I2/Image2_Guassian_Octave'+str(i+1)+'_imno'+str(j+1)+'.jpg')
+		cv.imwrite('CV/Gaussian/I2/Image2_Guassian_Octave'+str(i+1)+'_imno'+str(j+1)+'.jpg',tmp)
+		plt.close()
 ## Generating all the Difference of Gaussian Images heree
-print(' Now the DoG Images are being calculated. They are displayed below')
+print(' Now the DoG Images are being calculated. ')
 image_generated_dog = []
 for i in range(len(image_generated)):
     image_generated_dog.append([])
@@ -578,8 +680,11 @@ for i in range(len(image_generated)):
 	for j in range(len(image_generated_dog[0])):
 		plt.imshow(image_generated_dog[i][j],cmap = 'gray')
 		plt.title(' This Image is a result of DoG in Octave '+ str(i+1) )
-		#plt.show()
-print(' The DoG Images have been displayed')
+		tmp = image_generated_dog[i][j].astype(np.uint8)
+		plt.savefig('Results/DoG/I2/Image2_DoG_Octave'+str(i+1)+'_imno'+str(j+1)+'.jpg')
+		cv.imwrite('CV/DoG/I2/Image2_DoG_Octave'+str(i+1)+'_imno'+str(j+1)+'.jpg',tmp)
+		plt.close()
+print(' The DoG Images have been saved')
 print(' Now we are detecting Keypoints')
 
 ## Initialisation of the Key Point List
@@ -600,8 +705,45 @@ for i in range(len(image_generated_dog)):
 for i in range(len(image_generated_dog)):
     kplist[i].append(keypoint_top_bottom(image_generated_dog[i][2],image_generated_dog[i][3]))
 
-print(' Key Points detected... After Orientation Assignment, they will be displayed')
-print(' The orientation are being assigned here....')
+image_1 = cv.imread('img2.jpg')
+image_1 = cv.resize(image_1,None, fx = 0.05, fy =  0.05, interpolation = cv.INTER_CUBIC)
+image_1 = cv.cvtColor(image_1,cv.COLOR_BGR2GRAY)
+
+for i in range(len(kplist)):
+	for j in range(len(kplist[0])):
+		if j!=0 and j!=3:
+			if i==0:
+				#plt.figure(figsize = (12,12))
+				plt.imshow(image_generated[i][j],cmap = 'gray')
+				for k in range(len(kplist[i][j])):
+					plt.scatter(kplist[i][j][k][1],kplist[i][j][k][0],color='r')
+					plt.savefig('Results/Keypoints/I2/'+' Octave '+ str(i+1) +'Image'+str(j+1)+'.jpg')
+				plt.close()	
+			if i==1:
+				#plt.figure(figsize = (12,12))
+				plt.imshow(image_generated[i][j],cmap = 'gray')
+				for k in range(len(kplist[i][j])):
+					plt.scatter(kplist[i][j][k][1]*2,kplist[i][j][k][0]*2,color='r')
+					plt.savefig('Results/Keypoints/I2/'+' Octave '+ str(i+1) +'Image'+str(j+1)+'.jpg')
+				plt.close()	
+			if i==2:
+				#plt.figure(figsize = (12,12))
+				plt.imshow(image_generated[i][j],cmap = 'gray')
+				for k in range(len(kplist[i][j])):
+					plt.scatter(kplist[i][j][k][1]*4,kplist[i][j][k][0]*4,color='r')
+					plt.savefig('Results/Keypoints/I2/'+' Octave '+ str(i+1) +'Image'+str(j+1)+'.jpg')
+				plt.close()	
+			if i==3:
+				#plt.figure(figsize = (12,12))
+				plt.imshow(image_generated[i][j],cmap = 'gray')
+				for k in range(len(kplist[i][j])):
+					plt.scatter(kplist[i][j][k][1]*8,kplist[i][j][k][0]*8,color='r')
+					plt.savefig('Results/Keypoints/I2/'+' Octave '+ str(i+1) +'Image'+str(j+1)+'.jpg')
+				plt.close()	
+print(' Key Points detected... they are saved..... Note that Red is for first octave, blue for second, cyan for third and yellow for fourth in the image saved..')
+
+print(' The orientations are being assigned here....')
+
 
 ## Assigning the Orientation to all the images
 ## This is done in the Gaussian Scale Space. 
@@ -614,7 +756,6 @@ for i in range(1,len(image_generated_dog)+1):
 image_1 = cv.imread('img2.jpg')
 image_1 = cv.resize(image_1,None, fx = 0.05, fy =  0.05, interpolation = cv.INTER_CUBIC)
 image_1 = cv.cvtColor(image_1,cv.COLOR_BGR2GRAY)
-image_1 = convolution(image_1, 0.5)
 plt.figure(figsize=(12,12))
 plt.imshow(image_1,cmap='gray')
 plt.title(' The Key point orientations after assigning to the original image')
@@ -648,7 +789,8 @@ for elem in orientation_final:
                     angle = rd.uniform(image[i][j][0]*10,(image[i][j][0]+1)*10)
                     arrow4 = plt.arrow(x=8*i[1],y=8*i[0],dx = 4*math.cos(angle*math.pi/180),dy = 4*math.sin(angle*math.pi/180),head_width=2,color='y',label = 'Octave 4')
                     plt.legend([arrow1,arrow2,arrow3,arrow4],['Octave 1','Octave 2','Octave 3','Octave 4'])
-#plt.show()
+plt.savefig('Results/Orientation/Orientation_Image_2.jpg')
+plt.close()
 #---------------------------------------------------------------------------- Assignment of Final Descriptor follows below -----------------------------------------------------------
 print(' Sift Descriptor under computation here')
 import math
@@ -704,14 +846,58 @@ for i in final_descriptor_:
 		sum_+=j
 	final_descriptor_[i] = final_descriptor_[i]/sum_
 # Now, final descriptor has all the keypoints and the correspoinding 128 Dimensional Vector
+
+print('Normalised Sift Descriptor with Max Value set to 0.2 is computed')
+print(' The SIFT Descriptor has been stored at Results/SIFT Descriptor')
+file = open('Results/SIFT Descriptor/128d_sift_img2.txt','w')
+file.write('\t\t\t SIFT Descriptors in each line are a 128D Vector\t\t\t\t\n\n\n')
 for i in final_descriptor_:
-	print(final_descriptor_[i])
-print(' Normalinsed Sift Descriptor with Max Value set to 0.2 is computed')
-print(' Now, we will try to match two images....')
+	for j in final_descriptor_[i]:
+		file.write(str(j)+'\t')
+	file.write('\n\n')
+file.close()
+print('Now, we will try to match two images....')
 # ------------------------------------------------------------------- Matching Images ------------------------------------------------------------- #
-import matching as mt 
-lst = mt.keypointmatch(final_descriptor,final_descriptor_)
+
+# Calling the KeyPoint Match Function for Final Mapping
+# Final descriptor, and final descriptor_ have the final descriptors.....
+lst = keypointmatch(final_descriptor,final_descriptor_)
 image = cv.imread('img1.jpg')
 image = cv.resize(image,None, fx = 0.05, fy =  0.05, interpolation = cv.INTER_CUBIC)
 image = cv.cvtColor(image,cv.COLOR_BGR2GRAY)
-cv.drawMatches(image,list(final_descriptor.keys(),image_1,list(final_descriptor_.keys())),lst)
+#image = cv.cvtColor(image,cv.COLOR_BGR2GRAY)
+image_1 = cv.imread('img2.jpg')
+image_1 = cv.resize(image_1,None, fx = 0.05, fy =  0.05, interpolation = cv.INTER_CUBIC)
+image_1 = cv.cvtColor(image_1,cv.COLOR_BGR2GRAY)
+
+## Displaying Images with Keypoints Detected and matches
+
+lst1 = []
+lst2 = []
+list_ = list(lst)
+for i in range(len(list_)):
+    lst1.append(list_[i][0])
+for i in range(len(list_)):
+    lst2.append(list_[i][1])
+
+plt.figure(figsize=(10,10))
+cnt = 0
+plt.imshow(image,cmap = 'gray')
+for i in range(len(lst1)):
+    plt.text(lst1[i][1],lst1[i][0],str(cnt),size = 15)
+    plt.scatter(lst1[i][1],lst1[i][0],color='c')
+    cnt+=1
+plt.savefig('Results/Matching/Image1.jpg')
+plt.close()
+cnt = 0      
+plt.figure(figsize=(10,10))
+plt.imshow(image_1,cmap = 'gray')
+
+for i in range(len(lst2)):
+    plt.text(lst2[i][1],lst2[i][0],str(cnt),size = 15)
+    plt.scatter(lst2[i][1],lst2[i][0],color='c')
+    cnt+=1
+plt.savefig('Results/Matching/Image2.jpg')
+plt.close()
+print('Matching Done.. SIFT Over')
+
