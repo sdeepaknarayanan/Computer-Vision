@@ -1,1 +1,1 @@
-## Stereo Image Construction using patches from source and reference images.
+## Image Construction using Epipolar Geometry. Construction of the reference image from the source image.
