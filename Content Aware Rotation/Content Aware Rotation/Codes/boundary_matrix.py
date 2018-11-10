@@ -4,9 +4,18 @@ import pandas as pd
 """
     Some Notes in this Code - You are using 1 Indexed Co-Ordinates
     Need a way to fix them up sometime later.
+    @9th November 2018 Update
 """
 
 def formboundary(N,X,Y,gridX,gridY):
+    """
+        energy_vx = energy for x coordinate vertices
+        energy_vy = energy for y coordinate vertices
+        energy_v = overall total energy
+        b = the RHS in the first part of the Optimization that we'll
+        be doing
+    """
+
     energy_vx = np.zeros(N)
     energy_vy = np.zeros(N);
     energy_v = np.zeros(2*N)
@@ -73,6 +82,4 @@ def formboundary(N,X,Y,gridX,gridY):
     """
 
     boundary_matrix = np.diag(energy_v)
-    df = pd.DataFrame(boundary_matrix)
-    df.to_csv('Boundary.csv')
     return boundary_matrix,b

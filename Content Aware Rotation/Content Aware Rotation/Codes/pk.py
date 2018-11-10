@@ -9,31 +9,33 @@ from math import floor, ceil
 	x,y are the same as vertexX and vertexY => len(x) =cx and len(y) = cy;
 	N is the number of vertices
 	dx, dy are the increments that we use across the grids.
+	Again 1 Indexed - The 1st row is full of zeros
 """
 def computepk(lines,dx,dy,N,x,y):
 
-	Pk = np.zeros(len(lines),N)
+	Pk = np.zeros((len(lines),N))
 	# PkV = np.zeros(len(lines),N)
 	# Pk1 = np.zeros(len(lines),N)
 	# Pk2 = np.zeros(len(lines),N)
+	x = x+1
+	y = y+1
+	for i in range(1,len(lines)):
 
-	for i in range(len(lines)):
-
-		x1 = lines[i][0]
-		y1 = lines[i][1]
-		x2 = lines[i][2]
-		y2 = lines[i][3]
-
+		x1 = lines[i][0]+1
+		y1 = lines[i][1]+1
+		x2 = lines[i][2]+1
+		y2 = lines[i][3]+1
+		
 		min_x = min(x1,x2) 
 		min_y = min(y1,y2)
 		"""
 			This is for extracting the corresponding Quad to be
 			found for Bilinear Interpolation
 		"""
-		xleft = floor(xmin/dx)+1
+		xleft = floor((min_x-1)/dx)+1
 		xright= xleft+1
 
-		ytop = floor(ymin/dy)+1
+		ytop = floor((min_y-1)/dy)+1
 		ybottom= ytop+1
 
 		"""
@@ -41,34 +43,20 @@ def computepk(lines,dx,dy,N,x,y):
 			We'll subtracting these matrices and then constructing the needed matrix
 		"""
 
-		Pkmatrix1 = np.zeros(len(y)+1,len(x)+1)
-		Pkmatrix2 = np.zeros(len(y)+1,len(x)+1)
-		PkmatrixV = np.zeros(len(y)+1,len(x)+1)
+		Pkmatrix1 = np.zeros((len(y),len(x)))
+		Pkmatrix2 = np.zeros((len(y),len(x)))
+		PkmatrixV = np.zeros((len(y),len(x)))
 
-		Pkmatrix1[ytop,xleft] = ((x[xright]-x1)/dx)*((y[ybottom]-y1)/dy)
-		Pkmatrix1[ytop,xright]= ((x1-x[xleft])/dx)*((y[ybottom]-y1)/dy)
-		Pkmatrix1[ybottom,xleft]= ((x[xright]-x1)/dx)*((y1-y[ytop])/dy)
-		Pkmatrix1[ybottom,xright]=((x1-x[xleft])/dx)*((y1-y[ytop])/dy)
+		Pkmatrix1[ytop-1,xleft-1] = ((x[xright-1]-x1)/dx)*((y[ybottom-1]-y1)/dy)
+		Pkmatrix1[ytop-1,xright-1]= ((x1-x[xleft-1])/dx)*((y[ybottom-1]-y1)/dy)
+		Pkmatrix1[ybottom-1,xleft-1]= ((x[xright-1]-x1)/dx)*((y1-y[ytop-1])/dy)
+		Pkmatrix1[ybottom-1,xright-1]=((x1-x[xleft-1])/dx)*((y1-y[ytop-1])/dy)
 
-		Pkmatrix2[ytop,xleft] = ((x[xright]-x2)/dx)*((y[ybottom]-y2)/dy)
-		Pkmatrix2[ytop,xright]= ((x2-x[xleft])/dx)*((y[ybottom]-y2)/dy)
-		Pkmatrix2[ybottom,xleft]= ((x[xright]-x2)/dx)*((y2-y[ytop])/dy)
-		Pkmatrix2[ybottom,xright]=((x2-x[xleft])/dx)*((y2-y[ytop])/dy)
+		Pkmatrix2[ytop-1,xleft-1] = ((x[xright-1]-x2)/dx)*((y[ybottom-1]-y2)/dy)
+		Pkmatrix2[ytop-1,xright-1]= ((x2-x[xleft-1])/dx)*((y[ybottom-1]-y2)/dy)
+		Pkmatrix2[ybottom-1,xleft-1]= ((x[xright-1]-x2)/dx)*((y2-y[ytop-1])/dy)
+		Pkmatrix2[ybottom-1,xright-1]=((x2-x[xleft-1])/dx)*((y2-y[ytop-1])/dy)
 
-		PkmatrixV[ytop,xleft] = 1
-		PkmatrixV[ytop,xright]= 1
-		PkmatrixV[ybottom,xleft]= 1
-		PkmatrixV[ybottom,xright]=1
-
-		Pk[i] = np.reshape(Pkmatrix2- Pkmatrix1,(1,N))
-		# PkV[i] = np.reshape(PkmatrixV,(1,N))
-		# Pk1[i] = np.reshape(Pkmatrix1,(1,N))
-		# Pk2[i] = np.reshape(Pkmatrix2,(1,N))
-
+		Pk[i] = np.reshape((Pkmatrix2- Pkmatrix1).transpose(),N)
+		
 	return Pk
-
-
-
-		
-
-		
