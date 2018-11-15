@@ -1,16 +1,17 @@
 import numpy as np
-import pandas as pd
 from line_matrix import *
 from shape_matrix import *
 from pk import *
 
 """
-    Some Notes in this Code - You are using 1 Indexed Co-Ordinates
-    Need a way to fix them up sometime later.
-    @9th November 2018 Update
+    Creating the nontrivial matrices for the boundary,
+    that the authors haven't explicitly given. This is 
+    to ensure that very rigid conditions are imposed
+    on the boundaries.
 """
 
 def formboundary(N,X,Y,gridX,gridY):
+
     """
         energy_vx = energy for x coordinate vertices
         energy_vy = energy for y coordinate vertices

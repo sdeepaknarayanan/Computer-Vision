@@ -1,13 +1,17 @@
 import numpy as np
 import math
-import pandas as pd
 from shape_matrix import *
 from extractlines import quantize_and_get
 from boundary_matrix import *
 from pk import *
 
 """
-    Incomplete as on 10th November! Bad - This is horrible!
+    Two Functions are defined here. 
+    getuk() and formline()
+    getuk - Used to get the list of all the unit vectors of the line that we're
+    using under consideration.
+    formline() - This is used in the formation of the Line Matrix that we'd be optimising
+    on. Here, we need to compute Pk, that is not explicitly given in the paper.
 """
 
 def getuk(lines):
@@ -31,11 +35,10 @@ def formline(lines,number_of_vertices,dx,dy,x,y,thetas):
         This is to form the Energy Function for 
         adding the constraint to preserve the line segments.
         This is a very important part of the project.
+        Standard Initialisations below.
     """
-    #UAll = np.zeros(((2,2),len(lines)))
     uk = getuk(lines)
     uk = np.matrix(uk)
-    df = pd.DataFrame(uk)
     N = number_of_vertices
     Pk = computepk(lines,dx,dy,N,x,y)
     matrix = np.zeros((2*N,2*N))
@@ -48,7 +51,6 @@ def formline(lines,number_of_vertices,dx,dy,x,y,thetas):
         for j in range(N):
             tempPk1[2*j] = Pk[i][j]
             tempPk2[2*j+1] = Pk[i][j]
-        df = pd.DataFrame(tempPk1)
         Pk_final[0] = tempPk1
         Pk_final[1] = tempPk2
         theta = thetas[int(lines[i][5]) - 1]*np.pi/180
@@ -62,5 +64,9 @@ def formline(lines,number_of_vertices,dx,dy,x,y,thetas):
         matrix+=inter
         Pk_[2*(i)] = Pk_final[0]
         Pk_[2*i+1] = Pk_final[1]
-    df = pd.DataFrame(Pk_)
+    """
+        We need Uk in the optimisation of thetas, 
+        also, we need to keep changing Pk as it is an optimisation
+        of theta and V. Important for each iteration.
+    """
     return Pk_,matrix,U_final

@@ -4,7 +4,7 @@ Content Aware Rotation, In ICCV 2013
 Authors: Kaiming He, Huiwen Chan, Jian Sun
 
 An implementation by S Deepak Narayanan, Indian Institute of Technology Gandhinagar
-
+16110142
 """
 
 
@@ -27,10 +27,12 @@ from optimization import *
 Here I am initialising all the parameters
 """
 
-rotation_angle = 6.1
-img = cv.imread('/home/deepak/Desktop/Vision Project/Content Aware Rotation/Codes/fig1.png')
+rotation_angle = -5
+delta = rotation_angle
+img = cv.imread('/home/deepak/Desktop/Vision Project/Content Aware Rotation/Dataset/image9.jpg')
 Y,X = img.shape[:2]
 
+name = '/home/deepak/Desktop/Vision Project/Content Aware Rotation/Dataset/image9.jpg.txt'
 """
 	Total Number of Quads created = 900. This is very 
 	deterimental in deciding the amount of time the 
@@ -79,6 +81,7 @@ while(1):
     vertexY = np.append(vertexY,temp)
     if temp>Y-2:
         break
+
 gridX, gridY = np.meshgrid(vertexX,vertexY)
 Vx = np.reshape(gridX,number_of_vertices,1)
 Vy = np.reshape(gridY,number_of_vertices,1)
@@ -88,15 +91,16 @@ for i in range(number_of_vertices):
     V[2*i+1] = Vy[i]
 V = V+1
 print(X,Y)
-delta = 6.1
+
 
 sdelta = np.zeros(90)
 sdelta[0] = 1000
 sdelta[44] = 1000
 sdelta[45] = 1000
 sdelta[89] = 1000
+
 print("Line Extraction and Quantization Begin....")
-lines = quantize_and_get(X,Y,threshold,linesegthreshold,x_len,y_len,delta)
+lines = quantize_and_get(X,Y,threshold,linesegthreshold,x_len,y_len,delta,name)
 print("Line Extraction and Quantization Done .... ")
 print("Forming the functions for Shape, Line, Boundary and Rotation Constraints...")
 
@@ -128,12 +132,21 @@ print('b is ',b.shape)
 n = number_of_vertices
 k = len(lines)
 print(n,k)
+
 V_new = np.zeros(len(V))
+
 dx = x_len; dy =y_len; N = number_of_vertices; x = vertexX; y = vertexY
+
 for number_of_iteration in range(1,11):
 	print("Iteration Number ", number_of_iteration)
 	V_new = fix_theta_solve_v(line,shape_preservation,boundary,b,lambda_l,lambda_r,lambda_b,n,k)
-	print("V Distance is ")
-	print(np.linalg.norm(V-V_new)**2)
 	thetas = fix_v_solve_theta(UK,lines,thetas,V_new,rotation_angle,dx,dy,N,x,y,sdelta,lambda_l,lambda_r)
 	Pk_all,line,UK = formline(lines,number_of_vertices,x_len,y_len,vertexX,vertexY,thetas)
+df = pd.DataFrame(thetas)
+df.to_csv('Results/Thetas9.csv')
+df = pd.DataFrame(V_new)
+df.to_csv('Results/Vertices9.csv')
+
+"""
+	dx, dy - Increments in X and Y
+"""

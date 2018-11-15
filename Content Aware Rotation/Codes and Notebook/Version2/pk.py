@@ -51,6 +51,12 @@ def computepk(lines,dx,dy,N,x,y):
         Pkmatrix2 = np.zeros((len(y),len(x)))
         PkmatrixV = np.zeros((len(y),len(x)))
 
+        """
+            Using Bilinear Interpolation to construct Pk by spillting the process into two different chunks.
+            PKMatrix1 is used for the interpolation of the first point in the line segment that we have detected.
+            PKMatrix2 is used for the interpolation of the second point in the line segment that we have detected.
+        """
+
         Pkmatrix1[ytop-1,xleft-1] = ((x[xright-1]-x1)/dx)*((y[ybottom-1]-y1)/dy)
         Pkmatrix1[ytop-1,xright-1]= ((x1-x[xleft-1])/dx)*((y[ybottom-1]-y1)/dy)
         Pkmatrix1[ybottom-1,xleft-1]= ((x[xright-1]-x1)/dx)*((y1-y[ytop-1])/dy)

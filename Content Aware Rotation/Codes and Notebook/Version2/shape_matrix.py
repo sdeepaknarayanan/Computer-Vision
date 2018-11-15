@@ -1,22 +1,23 @@
 import numpy as np
-import pandas as pd
 from line_matrix import *
 from boundary_matrix import *
 from pk import *
 
 """
-	This function computes the value of StS, see report for further details
-	First Row is full of zeros
+	We need to compute the value of the Shape Preservation Energy. 
+	For the same, we break it down into a quadratic and optimize the
+	quadratic function that we're concerned with.
 """
 
 def formshape(x,y,number_of_vertices,quad_count):
-	global aq1    # X and Y are VertexX and Vertexy
+	# X and Y are VertexX and Vertexy
 	N = number_of_vertices
 	matrix = np.zeros((2*N,2*N))
 	x = x+1
 	y = y+1
 	for i in range(len(y)):
 		for j in range(len(x)):
+
 			""" Each Quad is taken care of. (i,j) = Refers to the 
 				top left vertex of every quad
 			"""
@@ -29,8 +30,6 @@ def formshape(x,y,number_of_vertices,quad_count):
 								[y[i],x[j+1],0,1],
 								[x[j+1],-y[i+1],1,0],
 								[y[i+1],x[j+1],0,1]])
-				
-				#print(Q)
 				
 				# Decompose Vq as Q times V. 
 				# Dont care about V for the time being
@@ -48,21 +47,11 @@ def formshape(x,y,number_of_vertices,quad_count):
 				Q[7][2*((j+1)*(len(y))+i+1)+1] = 1
 				
 				temp_matrix = (Aq.dot(np.linalg.pinv(Aq.transpose().dot(Aq))).dot(Aq.transpose()) - np.eye(8)).dot(Q)
-				#print(Q)#print(np.linalg.pinv(Aq.transpose().dot(Aq)))
 				matrix+=temp_matrix.transpose().dot(temp_matrix); 
 				
-                
-				"""print(Aq)
-																print(np.transpose(Aq))
-																for i in range(len(Aq)):
-																	for j in range(len(Aq[0])):
-																		print(np.transpose(Aq)[i,:].dot(Aq[:,j]))
-																break"""
 			except:
 				continue
-				
-				
-				
-		
-	df = pd.DataFrame(matrix)
+				"""
+					We add an except clauser for safety; 
+				"""
 	return matrix
