@@ -1,2 +1,1 @@
-## 3rd Assignment - Panaroma stitching
-## Warping on Depth Image - Incomplete
+## Panaroma Stitching (No Blending has been done)
